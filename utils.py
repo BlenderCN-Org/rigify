@@ -32,6 +32,7 @@ from rna_prop_ui import rna_idprop_ui_prop_get
 
 RIG_DIR = "rigs"  # Name of the directory where rig types are kept
 METARIG_DIR = "metarigs"  # Name of the directory where metarigs are kept
+TEMPLATE_DIR = "ui_templates"  # Name of the directory where ui templates are kept
 
 ORG_PREFIX = "ORG-"  # Prefix of original bones.
 MCH_PREFIX = "MCH-"  # Prefix of mechanism bones.
@@ -972,13 +973,51 @@ def get_rig_type(rig_type, base_path=''):
     return submod
 
 
-def get_metarig_module(metarig_name, path=METARIG_DIR):
+def get_metarig_module(metarig_name, base_path):
     """ Fetches a rig module by name, and returns it.
     """
+    if not base_path:
+        name = ".%s.%s" % (METARIG_DIR, metarig_name)
+        submod = importlib.import_module(name, package=MODULE_NAME)
+        importlib.reload(submod)
+    else:
+        if '.' in metarig_name:
+            module_subpath = str.join(os.sep, metarig_name.split('.'))
+            package = metarig_name.split('.')[0]
+            importlib.import_module(package)
+            for sub in metarig_name.split('.')[1:]:
+                package = '.'.join([package, sub])
+                importlib.import_module(package)
+        else:
+            module_subpath = metarig_name
 
-    name = ".%s.%s" % (path, metarig_name)
-    submod = importlib.import_module(name, package=MODULE_NAME)
-    importlib.reload(submod)
+        spec = importlib.util.spec_from_file_location(metarig_name, base_path + module_subpath + '.py')
+        submod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(submod)
+    return submod
+
+
+def get_ui_template_module(template_name, base_path=''):
+    """ Fetches a ui template module by name, and returns it.
+    """
+    if not base_path:
+        name = ".%s.%s" % (TEMPLATE_DIR, template_name)
+        submod = importlib.import_module(name, package=MODULE_NAME)
+        importlib.reload(submod)
+    else:
+        if '.' in template_name:
+            module_subpath = str.join(os.sep, template_name.split('.'))
+            package = template_name.split('.')[0]
+            importlib.import_module(package)
+            for sub in template_name.split('.')[1:]:
+                package = '.'.join([package, sub])
+                importlib.import_module(package)
+        else:
+            module_subpath = template_name
+
+        spec = importlib.util.spec_from_file_location(template_name, base_path + module_subpath + '.py')
+        submod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(submod)
     return submod
 
 
@@ -1166,8 +1205,24 @@ def write_metarig(obj, layers=False, func_name="create", groups=False):
 
         code.append("\n    arm.layers = [(x in " + str(active_layers) + ") for x in range(" + str(len(arm.layers)) + ")]")
 
+    if func_name == "create":
+        active_template = arm.rigify_active_template
+        template_name = arm.rigify_templates[active_template].name
+        code.append("\n    # Select proper UI template")
+        code.append("    template_name = '{}'".format(template_name))
+        code.append("    arm_templates = arm.rigify_templates.items()")
+        code.append("    template_index = None")
+        code.append("    for i, template in enumerate(arm_templates):")
+        code.append("        if template[0] == template_name:")
+        code.append("            template_index = i")
+        code.append("            break")
+        code.append("    if template_index is None:")
+        code.append("        template_index = 0 # Default to something...")
+        code.append("    else:")
+        code.append("        arm.rigify_active_template = template_index")
+
     code.append('\nif __name__ == "__main__":')
-    code.append("    " + func_name + "(bpy.context.active_object)")
+    code.append("    " + func_name + "(bpy.context.active_object)\n")
 
     return "\n".join(code)
 
@@ -1178,7 +1233,7 @@ def write_widget(obj):
     script = ""
     script += "def create_thing_widget(rig, bone_name, size=1.0, bone_transform_name=None):\n"
     script += "    obj = create_widget(rig, bone_name, bone_transform_name)\n"
-    script += "    if obj != None:\n"
+    script += "    if obj is not None:\n"
 
     # Vertices
     if len(obj.data.vertices) > 0:

@@ -66,7 +66,7 @@ def get_rig_list(path, mode='relative'):
                 rig = utils.get_rig_type(module_name, base_path=base_path)
             else:
                 module_name = "__init__"
-                rig = utils.get_rig_type(module_name, base_path=base_path + f + os.sep)
+                rig = utils.get_rig_type(module_name, base_path=os.path.join(base_path, f, ''))
             # Check if it's a rig itself
             if hasattr(rig, "Rig"):
                 rigs += [f]
@@ -82,9 +82,10 @@ def get_rig_list(path, mode='relative'):
                 module_name = os.path.join(path, t).replace(os.sep, ".")
                 rig = utils.get_rig_type(module_name, base_path=base_path)
             else:
-                external_folder = bpy.context.user_preferences.addons['rigify'].preferences.custom_rigs_folder
-                module_name = os.path.join(path, t).replace(external_folder, '').replace(os.sep, ".")
-                rig = utils.get_rig_type(module_name, base_path=external_folder)
+                custom_folder = bpy.context.user_preferences.addons['rigify'].preferences.custom_folder
+                custom_rigs_folder = os.path.join(custom_folder, utils.RIG_DIR, '')
+                module_name = os.path.join(path, t).replace(custom_rigs_folder, '').replace(os.sep, ".")
+                rig = utils.get_rig_type(module_name, base_path=custom_rigs_folder)
             if hasattr(rig, "Rig"):
                 rigs += [t]
             if hasattr(rig, 'IMPLEMENTATION') and rig.IMPLEMENTATION:
@@ -114,8 +115,7 @@ collection_list = get_collection_list(rig_list)
 col_enum_list = [("All", "All", ""), ("None", "None", "")] + [(c, c, "") for c in collection_list]
 
 
-def get_external_rigs():
-    external_folder = bpy.context.user_preferences.addons['rigify'].preferences.custom_rigs_folder
-    if external_folder:
-        external_rigs_dict = get_rig_list(external_folder, mode='absolute')
+def get_external_rigs(custom_rigs_folder):
+    if custom_rigs_folder:
+        external_rigs_dict = get_rig_list(custom_rigs_folder, mode='absolute')
         rigs_dict['external'] = external_rigs_dict

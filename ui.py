@@ -19,6 +19,7 @@
 # <pep8 compliant>
 
 import bpy
+import os
 from bpy.props import StringProperty
 from mathutils import Color
 
@@ -28,11 +29,22 @@ from .utils import unique_name
 from .utils import upgradeMetarigTypes, outdated_types
 from .utils import get_keyed_frames, bones_in_frame
 from .utils import overwrite_prop_animation
+from .utils import RIG_DIR
 from .rigs.utils import get_limb_generated_names
 from . import rig_lists
+from . import template_list
 from . import generate
 from . import rot_mode
 
+class DATA_UL_rigify_template_list(bpy.types.UIList):
+    """UIList subclass, to disable renaming in UI"""
+    def draw_item(self, context, layout, data, item, icon, active_data, active_propname):
+        ob = data
+        template = item
+        if template:
+            layout.label(text=template.name, translate=False, icon_value=icon)
+        else:
+            layout.label(text="", translate=False, icon_value=icon)
 
 class DATA_PT_rigify_buttons(bpy.types.Panel):
     bl_label = "Rigify Buttons"
@@ -93,7 +105,24 @@ class DATA_PT_rigify_buttons(bpy.types.Panel):
                 layout.operator("pose.rigify_upgrade_types", text="Upgrade Metarig")
 
             row = layout.row()
+            # Rig type field
+
+            armature_id_store = C.object.data
+
+            col = layout.column(align=True)
+            col.active = (not 'rig_id' in C.object.data)
+            if len(template_list.template_list) > 1:
+                if len(context.object.data.rigify_templates) == 0:
+                    col.operator("pose.rigify_template_init")
+                else:
+                    col.label("UI template for rig:")
+                    col.template_list("DATA_UL_rigify_template_list", "rigify_templates", armature_id_store, "rigify_templates", armature_id_store, "rigify_active_template")
+
+            col.separator()
+            row = col.row()
+            row.active = len(context.object.data.rigify_templates) != 0
             row.operator("pose.rigify_generate", text="Generate Rig", icon='POSE_HLT')
+
             row.enabled = enable_generate_and_advanced
 
             if id_store.rigify_advanced_generation:
@@ -631,8 +660,9 @@ class BONE_PT_rigify_buttons(bpy.types.Panel):
         # Rig type parameters / Rig type non-exist alert
         if rig_name != "":
             try:
-                if 'external' in rig_lists.rigs_dict and rig_name in rig_lists.rigs_dict['external']['rig_list']:
-                    custom_rigs_folder = bpy.context.user_preferences.addons['rigify'].preferences.custom_rigs_folder
+                if rig_name in rig_lists.rigs_dict['external']['rig_list']:
+                    custom_folder = bpy.context.user_preferences.addons['rigify'].preferences.custom_folder
+                    custom_rigs_folder = os.path.join(custom_folder, RIG_DIR, '')
                     rig = get_rig_type(rig_name, custom_rigs_folder)
                 else:
                     rig = get_rig_type(rig_name)
@@ -768,6 +798,18 @@ class LayerInit(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class TemplateInit(bpy.types.Operator):
+    """Initialize armature rigify ui templates"""
+
+    bl_idname = "pose.rigify_template_init"
+    bl_label = "Add Rigify UI Templates"
+    bl_options = {'UNDO'}
+
+    def execute(self, context):
+        template_list.fill_ui_template_list(context.object)
+        return {'FINISHED'}
+
+
 class Generate(bpy.types.Operator):
     """Generates a rig from the active metarig armature"""
 
@@ -843,7 +885,8 @@ class Sample(bpy.types.Operator):
             context.user_preferences.edit.use_global_undo = False
             try:
                 if 'external' in rig_lists.rigs_dict and self.metarig_type in rig_lists.rigs_dict['external']['rig_list']:
-                    custom_rigs_folder = bpy.context.user_preferences.addons['rigify'].preferences.custom_rigs_folder
+                    custom_folder = bpy.context.user_preferences.addons['rigify'].preferences.custom_folder
+                    custom_rigs_folder = os.path.join(custom_folder, RIG_DIR, '')
                     rig = get_rig_type(self.metarig_type, custom_rigs_folder)
                 else:
                     rig = get_rig_type(self.metarig_type)
@@ -1349,6 +1392,7 @@ class OBJECT_OT_Rot2Pole(bpy.types.Operator):
 
 def register():
 
+    bpy.utils.register_class(DATA_UL_rigify_template_list)
     bpy.utils.register_class(DATA_OT_rigify_add_bone_groups)
     bpy.utils.register_class(DATA_OT_rigify_use_standard_colors)
     bpy.utils.register_class(DATA_OT_rigify_apply_selection_colors)
@@ -1365,6 +1409,7 @@ def register():
     bpy.utils.register_class(VIEW3D_PT_rigify_animation_tools)
     bpy.utils.register_class(VIEW3D_PT_tools_rigify_dev)
     bpy.utils.register_class(LayerInit)
+    bpy.utils.register_class(TemplateInit)
     bpy.utils.register_class(Generate)
     bpy.utils.register_class(UpgradeMetarigTypes)
     bpy.utils.register_class(SwitchToLegacy)
@@ -1385,6 +1430,7 @@ def register():
 
 def unregister():
 
+    bpy.utils.unregister_class(DATA_UL_rigify_template_list)
     bpy.utils.unregister_class(DATA_OT_rigify_add_bone_groups)
     bpy.utils.unregister_class(DATA_OT_rigify_use_standard_colors)
     bpy.utils.unregister_class(DATA_OT_rigify_apply_selection_colors)
@@ -1401,6 +1447,7 @@ def unregister():
     bpy.utils.unregister_class(VIEW3D_PT_rigify_animation_tools)
     bpy.utils.unregister_class(VIEW3D_PT_tools_rigify_dev)
     bpy.utils.unregister_class(LayerInit)
+    bpy.utils.unregister_class(TemplateInit)
     bpy.utils.unregister_class(Generate)
     bpy.utils.unregister_class(UpgradeMetarigTypes)
     bpy.utils.unregister_class(SwitchToLegacy)
@@ -1417,4 +1464,3 @@ def unregister():
     bpy.utils.unregister_class(OBJECT_OT_Rot2Pole)
 
     rot_mode.unregister()
-
