@@ -73,10 +73,10 @@ def get_metarig_list(path, mode='relative', depth=0):
             # Check directories
             if mode == 'relative':
                 module_name = os.path.join(path, f).replace(os.sep, ".")
-                metarig = utils.get_metarig_module(module_name, base_path=base_path)
+                metarig = utils.get_resource(module_name, resource_type='METARIG', base_path=base_path)
             else:
                 module_name = "__init__"
-                metarig = utils.get_metarig_module(module_name, base_path=os.path.join(base_path, f, ''))
+                metarig = utils.get_resource(module_name, resource_type='METARIG', base_path=os.path.join(base_path, f, ''))
 
             # Check for sub-rigs
             metarigs_dict[f] = get_metarig_list(os.path.join(path, f, ""), mode=mode, depth=1)  # "" adds a final slash
@@ -85,12 +85,12 @@ def get_metarig_list(path, mode='relative', depth=0):
             t = f[:-3]
             if mode == 'relative':
                 module_name = os.path.join(path, t).replace(os.sep, ".")
-                metarig = utils.get_metarig_module(module_name, base_path=base_path)
+                metarig = utils.get_resource(module_name, resource_type='METARIG', base_path=base_path)
             else:
                 custom_folder = bpy.context.user_preferences.addons['rigify'].preferences.custom_folder
                 custom_metarigs_folder = os.path.join(custom_folder, utils.METARIG_DIR, '')
                 module_name = os.path.join(path, t).replace(custom_metarigs_folder, '').replace(os.sep, ".")
-                metarig = utils.get_metarig_module(module_name, base_path=custom_metarigs_folder)
+                metarig = utils.get_resource(module_name, resource_type='METARIG', base_path=custom_metarigs_folder)
             metarigs += [metarig]
 
     if depth == 1:

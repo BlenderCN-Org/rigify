@@ -23,7 +23,7 @@ import os
 from bpy.props import StringProperty
 from mathutils import Color
 
-from .utils import get_rig_type, MetarigError
+from .utils import get_resource, MetarigError
 from .utils import write_metarig, write_widget
 from .utils import unique_name
 from .utils import upgradeMetarigTypes, outdated_types
@@ -663,9 +663,9 @@ class BONE_PT_rigify_buttons(bpy.types.Panel):
                 if rig_name in rig_lists.rigs_dict['external']['rig_list']:
                     custom_folder = bpy.context.user_preferences.addons['rigify'].preferences.custom_folder
                     custom_rigs_folder = os.path.join(custom_folder, RIG_DIR, '')
-                    rig = get_rig_type(rig_name, custom_rigs_folder)
+                    rig = get_resource(rig_name, base_path=custom_rigs_folder)
                 else:
-                    rig = get_rig_type(rig_name)
+                    rig = get_resource(rig_name, resource_type='RIG')
                 rig.Rig
             except (ImportError, AttributeError):
                 row = layout.row()
@@ -887,9 +887,9 @@ class Sample(bpy.types.Operator):
                 if 'external' in rig_lists.rigs_dict and self.metarig_type in rig_lists.rigs_dict['external']['rig_list']:
                     custom_folder = bpy.context.user_preferences.addons['rigify'].preferences.custom_folder
                     custom_rigs_folder = os.path.join(custom_folder, RIG_DIR, '')
-                    rig = get_rig_type(self.metarig_type, custom_rigs_folder)
+                    rig = get_resource(self.metarig_type, base_path=custom_rigs_folder)
                 else:
-                    rig = get_rig_type(self.metarig_type)
+                    rig = get_resource(self.metarig_type)
                 create_sample = rig.create_sample
             except (ImportError, AttributeError):
                 raise Exception("rig type '" + self.metarig_type + "' has no sample.")

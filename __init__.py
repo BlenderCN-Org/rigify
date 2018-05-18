@@ -146,7 +146,7 @@ class RigifyPreferences(AddonPreferences):
                 if rig_lists.rigs_dict['external']:
                     # Add external rig parameters
                     for rig in rig_lists.rigs_dict['external']['rig_list']:
-                        r = utils.get_rig_type(rig, custom_rigs_folder)
+                        r = utils.get_resource(rig, base_path=custom_rigs_folder)
                         try:
                             r.add_parameters(RigifyParameters)
                         except AttributeError:
@@ -412,7 +412,7 @@ def register():
 
     # Add rig parameters
     for rig in rig_lists.rig_list:
-        r = utils.get_rig_type(rig)
+        r = utils.get_resource(rig, resource_type='RIG')
         try:
             r.add_parameters(RigifyParameters)
         except AttributeError:

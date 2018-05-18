@@ -949,73 +949,31 @@ def copy_attributes(a, b):
                 pass
 
 
-def get_rig_type(rig_type, base_path=''):
+def get_resource(resource_name, resource_type='RIG', base_path=''):
     """ Fetches a rig module by name, and returns it.
     """
+    if resource_type == 'RIG':
+        dir_name = RIG_DIR
+    elif resource_type == 'METARIG':
+        dir_name = METARIG_DIR
+    elif resource_type == 'UI_TEMPLATE':
+        dir_name = TEMPLATE_DIR
     if not base_path:
-        name = ".%s.%s" % (RIG_DIR, rig_type)
+        name = ".%s.%s" % (dir_name, resource_name)
         submod = importlib.import_module(name, package=MODULE_NAME)
         importlib.reload(submod)
     else:
-        if '.' in rig_type:
-            module_subpath = str.join(os.sep, rig_type.split('.'))
-            package = rig_type.split('.')[0]
+        if '.' in resource_name:
+            module_subpath = str.join(os.sep, resource_name.split('.'))
+            package = resource_name.split('.')[0]
             importlib.import_module(package)
-            for sub in rig_type.split('.')[1:]:
+            for sub in resource_name.split('.')[1:]:
                 package = '.'.join([package, sub])
                 importlib.import_module(package)
         else:
-            module_subpath = rig_type
+            module_subpath = resource_name
 
-        spec = importlib.util.spec_from_file_location(rig_type, base_path + module_subpath + '.py')
-        submod = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(submod)
-    return submod
-
-
-def get_metarig_module(metarig_name, base_path):
-    """ Fetches a rig module by name, and returns it.
-    """
-    if not base_path:
-        name = ".%s.%s" % (METARIG_DIR, metarig_name)
-        submod = importlib.import_module(name, package=MODULE_NAME)
-        importlib.reload(submod)
-    else:
-        if '.' in metarig_name:
-            module_subpath = str.join(os.sep, metarig_name.split('.'))
-            package = metarig_name.split('.')[0]
-            importlib.import_module(package)
-            for sub in metarig_name.split('.')[1:]:
-                package = '.'.join([package, sub])
-                importlib.import_module(package)
-        else:
-            module_subpath = metarig_name
-
-        spec = importlib.util.spec_from_file_location(metarig_name, base_path + module_subpath + '.py')
-        submod = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(submod)
-    return submod
-
-
-def get_ui_template_module(template_name, base_path=''):
-    """ Fetches a ui template module by name, and returns it.
-    """
-    if not base_path:
-        name = ".%s.%s" % (TEMPLATE_DIR, template_name)
-        submod = importlib.import_module(name, package=MODULE_NAME)
-        importlib.reload(submod)
-    else:
-        if '.' in template_name:
-            module_subpath = str.join(os.sep, template_name.split('.'))
-            package = template_name.split('.')[0]
-            importlib.import_module(package)
-            for sub in template_name.split('.')[1:]:
-                package = '.'.join([package, sub])
-                importlib.import_module(package)
-        else:
-            module_subpath = template_name
-
-        spec = importlib.util.spec_from_file_location(template_name, base_path + module_subpath + '.py')
+        spec = importlib.util.spec_from_file_location(resource_name, base_path + module_subpath + '.py')
         submod = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(submod)
     return submod
