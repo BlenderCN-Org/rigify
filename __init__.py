@@ -48,10 +48,13 @@ from bpy.types import AddonPreferences
 from bpy.props import BoolProperty
 from bpy.props import StringProperty
 
+previous_custom_folder = ''
+
 class RigifyPreferences(AddonPreferences):
     # this must match the addon name, use '__package__'
     # when defining this in a submodule of a python package.
     bl_idname = __name__
+
 
     def update_legacy(self, context):
         if self.legacy_mode:
@@ -126,6 +129,14 @@ class RigifyPreferences(AddonPreferences):
 
         custom_folder = bpy.context.user_preferences.addons['rigify'].preferences.custom_folder
 
+        # Remove previous custom folder from path
+        global previous_custom_folder
+        if previous_custom_folder:
+            for path in sys.path[:]:
+                if previous_custom_folder in path:
+                    sys.path.remove(path)
+        previous_custom_folder = custom_folder
+
         if custom_folder == "":
             if 'external' in rig_lists.rigs_dict:
                 rig_lists.rigs_dict.pop('external')
@@ -137,16 +148,16 @@ class RigifyPreferences(AddonPreferences):
         else:
             # Reload rigs
             if utils.RIG_DIR in os.listdir(custom_folder):
-                custom_rigs_folder = os.path.join(custom_folder, utils.RIG_DIR, '')
 
-                if custom_rigs_folder not in sys.path:
-                    sys.path.append(custom_rigs_folder)
+                if custom_folder not in sys.path:
+                    sys.path.append(custom_folder)
 
-                rig_lists.get_external_rigs(custom_rigs_folder)
+                rig_lists.get_external_rigs(custom_folder)
                 if rig_lists.rigs_dict['external']:
                     # Add external rig parameters
                     for rig in rig_lists.rigs_dict['external']['rig_list']:
-                        r = utils.get_resource(rig, base_path=custom_rigs_folder)
+                        MODULE_DIR = os.path.dirname(custom_folder)
+                        r = utils.get_resource('.'.join((utils.RIG_DIR, rig)), base_path=MODULE_DIR)
                         try:
                             r.add_parameters(RigifyParameters)
                         except AttributeError:
@@ -412,7 +423,7 @@ def register():
 
     # Add rig parameters
     for rig in rig_lists.rig_list:
-        r = utils.get_resource(rig, resource_type='RIG')
+        r = utils.get_resource(rig)
         try:
             r.add_parameters(RigifyParameters)
         except AttributeError:

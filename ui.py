@@ -120,7 +120,7 @@ class DATA_PT_rigify_buttons(bpy.types.Panel):
 
             col.separator()
             row = col.row()
-            row.active = len(context.object.data.rigify_templates) != 0
+            row.active = len(context.object.data.rigify_templates) != 0 or len(template_list.template_list) == 1
             row.operator("pose.rigify_generate", text="Generate Rig", icon='POSE_HLT')
 
             row.enabled = enable_generate_and_advanced
@@ -660,10 +660,9 @@ class BONE_PT_rigify_buttons(bpy.types.Panel):
         # Rig type parameters / Rig type non-exist alert
         if rig_name != "":
             try:
-                if rig_name in rig_lists.rigs_dict['external']['rig_list']:
+                if 'external' in rig_lists.rigs_dict and rig_name in rig_lists.rigs_dict['external']['rig_list']:
                     custom_folder = bpy.context.user_preferences.addons['rigify'].preferences.custom_folder
-                    custom_rigs_folder = os.path.join(custom_folder, RIG_DIR, '')
-                    rig = get_resource(rig_name, base_path=custom_rigs_folder)
+                    rig = get_resource(RIG_DIR + '.' + rig_name, base_path=custom_folder, resource_type='RIG')
                 else:
                     rig = get_resource(rig_name, resource_type='RIG')
                 rig.Rig
@@ -886,10 +885,9 @@ class Sample(bpy.types.Operator):
             try:
                 if 'external' in rig_lists.rigs_dict and self.metarig_type in rig_lists.rigs_dict['external']['rig_list']:
                     custom_folder = bpy.context.user_preferences.addons['rigify'].preferences.custom_folder
-                    custom_rigs_folder = os.path.join(custom_folder, RIG_DIR, '')
-                    rig = get_resource(self.metarig_type, base_path=custom_rigs_folder)
+                    rig = get_resource(RIG_DIR + '.' + self.metarig_type, base_path=custom_folder, resource_type='RIG')
                 else:
-                    rig = get_resource(self.metarig_type)
+                    rig = get_resource(self.metarig_type, resource_type='RIG')
                 create_sample = rig.create_sample
             except (ImportError, AttributeError):
                 raise Exception("rig type '" + self.metarig_type + "' has no sample.")

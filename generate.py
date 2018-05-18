@@ -34,6 +34,7 @@ from .utils import random_id
 from .utils import copy_attributes
 from .utils import gamma_correct
 from . import rig_lists
+from . import template_list
 
 RIG_MODULE = "rigs"
 ORG_LAYER = [n == 31 for n in range(0, 32)]  # Armature layer that original bones should be moved to.
@@ -496,7 +497,10 @@ def generate_rig(context, metarig):
     id_store.rigify_rig_ui = script.name
 
     id_store = context.armature
-    template_name = id_store.rigify_templates[id_store.rigify_active_template].name
+    if len(template_list.template_list) > 1:
+        template_name = id_store.rigify_templates[id_store.rigify_active_template].name
+    else:
+        template_name = template_list.template_list[0][:-3]
     try:
         template = get_resource(template_name, resource_type='UI_TEMPLATE')
     except:
@@ -635,8 +639,7 @@ def get_bone_rigs(obj, bone_name, halt_on_missing=False):
                     'external' in rig_lists.rigs_dict
                     and rig_type in rig_lists.rigs_dict['external']['rig_list']):
                 custom_folder = bpy.context.user_preferences.addons['rigify'].preferences.custom_folder
-                custom_rigs_folder = os.path.join(custom_folder, RIG_DIR, '')
-                rig = get_resource(rig_type, resource_type='RIG', base_path=custom_rigs_folder)
+                rig = get_resource(RIG_DIR + '.' + rig_type, base_path=custom_folder, resource_type='RIG')
             else:
                 rig = get_resource(rig_type, resource_type='RIG')
             rig = rig.Rig(obj, bone_name, params)

@@ -949,7 +949,7 @@ def copy_attributes(a, b):
                 pass
 
 
-def get_resource(resource_name, resource_type='RIG', base_path=''):
+def get_resource(resource_name, base_path='', resource_type='RIG'):
     """ Fetches a rig module by name, and returns it.
     """
     if resource_type == 'RIG':
@@ -958,6 +958,7 @@ def get_resource(resource_name, resource_type='RIG', base_path=''):
         dir_name = METARIG_DIR
     elif resource_type == 'UI_TEMPLATE':
         dir_name = TEMPLATE_DIR
+
     if not base_path:
         name = ".%s.%s" % (dir_name, resource_name)
         submod = importlib.import_module(name, package=MODULE_NAME)
@@ -966,14 +967,16 @@ def get_resource(resource_name, resource_type='RIG', base_path=''):
         if '.' in resource_name:
             module_subpath = str.join(os.sep, resource_name.split('.'))
             package = resource_name.split('.')[0]
-            importlib.import_module(package)
+            submod = importlib.import_module(package)
+            importlib.reload(submod)
             for sub in resource_name.split('.')[1:]:
                 package = '.'.join([package, sub])
-                importlib.import_module(package)
+                submod = importlib.import_module(package)
+                importlib.reload(submod)
         else:
             module_subpath = resource_name
 
-        spec = importlib.util.spec_from_file_location(resource_name, base_path + module_subpath + '.py')
+        spec = importlib.util.spec_from_file_location(resource_name, os.path.join(base_path, module_subpath + '.py'))
         submod = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(submod)
     return submod
