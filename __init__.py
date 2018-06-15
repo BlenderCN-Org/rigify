@@ -121,6 +121,7 @@ class RigifyPreferences(AddonPreferences):
             globals()['metarig_menu'] = metarig_menu
 
             register()
+            self.update_external_rigs(context)
 
     def update_external_rigs(self, context):
 

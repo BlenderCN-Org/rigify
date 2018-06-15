@@ -71,21 +71,19 @@ class DATA_PT_rigify_buttons(bpy.types.Panel):
 
             check_props = ['IK_follow', 'root/parent', 'FK_limb_follow', 'IK_Stretch']
 
-            for obj in bpy.data.objects:
-                if type(obj.data) != bpy.types.Armature:
-                    continue
-                for bone in obj.pose.bones:
-                    if bone.bone.layers[30] and (list(set(bone.keys()) & set(check_props))):
-                        show_warning = True
+            for bone in obj.pose.bones:
+                if bone.bone.layers[30] and (list(set(bone.keys()) & set(check_props))):
+                    show_warning = True
+                    break
+            for b in obj.pose.bones:
+                if b.rigify_type in outdated_types.keys():
+                    print(b.rigify_type)
+                    if outdated_types[b.rigify_type]:
+                        show_update_metarig = True
+                    else:
+                        show_update_metarig = False
+                        show_not_updatable = True
                         break
-                for b in obj.pose.bones:
-                    if b.rigify_type in outdated_types.keys():
-                        if outdated_types[b.rigify_type]:
-                            show_update_metarig = True
-                        else:
-                            show_update_metarig = False
-                            show_not_updatable = True
-                            break
 
             if show_warning:
                 layout.label(text=WARNING, icon='ERROR')
