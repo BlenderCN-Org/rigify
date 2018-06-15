@@ -32,7 +32,7 @@ def get_template_list(path=''):
     files = os.listdir(TEMPLATE_DIR_ABS)
     files.sort()
 
-    files = [f for f in files if f.endswith(".py")]
+    files = [f for f in files if f.endswith(".py") and not f.startswith('_')]
     return files
 
 
