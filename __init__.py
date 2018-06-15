@@ -423,16 +423,20 @@ def register():
 
     # Add rig parameters
     for rig in rig_lists.rig_list:
-        r = utils.get_resource(rig)
+        if bpy.context.user_preferences.addons['rigify'].preferences.legacy_mode:
+            r = utils.get_rig_type(rig)
+        else:
+            r = utils.get_resource(rig)
         try:
             r.add_parameters(RigifyParameters)
         except AttributeError:
             pass
 
-    external_rigs_folder = bpy.context.user_preferences.addons['rigify'].preferences.custom_folder
-    if external_rigs_folder and not 'external' in rig_lists.rigs_dict:
-        #force update on reload
-        bpy.context.user_preferences.addons['rigify'].preferences.custom_folder = external_rigs_folder
+    if not bpy.context.user_preferences.addons['rigify'].preferences.legacy_mode:
+        external_rigs_folder = bpy.context.user_preferences.addons['rigify'].preferences.custom_folder
+        if external_rigs_folder and not 'external' in rig_lists.rigs_dict:
+            #force update on reload
+            bpy.context.user_preferences.addons['rigify'].preferences.custom_folder = external_rigs_folder
 
 
 def unregister():
