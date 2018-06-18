@@ -139,14 +139,10 @@ class RigifyPreferences(AddonPreferences):
                     sys.path.remove(path)
         previous_custom_folder = custom_folder
 
-        if custom_folder == "":
+        invalid_path = (custom_folder == "" or not os.path.exists(custom_folder))
+        if invalid_path or utils.RIG_DIR not in os.listdir(custom_folder):
             if 'external' in rig_lists.rigs_dict:
                 rig_lists.rigs_dict.pop('external')
-            if 'external' in metarig_menu.metarigs_dict:
-                metarig_menu.metarigs_dict.pop('external')
-            custom_metarigs_folder = ''
-            custom_templates_folder = ''
-
         else:
             # Reload rigs
             if utils.RIG_DIR in os.listdir(custom_folder):
@@ -164,21 +160,21 @@ class RigifyPreferences(AddonPreferences):
                         except AttributeError:
                             pass
 
+        if invalid_path or utils.METARIG_DIR not in os.listdir(custom_folder):
+            custom_metarigs_folder = ''
+            if 'external' in metarig_menu.metarigs_dict:
+                metarig_menu.metarigs_dict.pop('external')
+        else:
             # Reload metarigs
-            if utils.METARIG_DIR in os.listdir(custom_folder):
-                custom_metarigs_folder = os.path.join(custom_folder, utils.METARIG_DIR)
+            custom_metarigs_folder = os.path.join(custom_folder, utils.METARIG_DIR)
+            if custom_metarigs_folder not in sys.path:
+                sys.path.append(custom_metarigs_folder)
 
-                if custom_metarigs_folder not in sys.path:
-                    sys.path.append(custom_metarigs_folder)
-
-            else:
-                custom_metarigs_folder = ''
-
+        if invalid_path or utils.TEMPLATE_DIR not in os.listdir(custom_folder):
+            custom_templates_folder = ''
+        else:
             # Reload templates
-            if utils.TEMPLATE_DIR in os.listdir(custom_folder):
-                custom_templates_folder = os.path.join(custom_folder, utils.TEMPLATE_DIR)
-            else:
-                custom_templates_folder = ''
+            custom_templates_folder = os.path.join(custom_folder, utils.TEMPLATE_DIR)
 
         metarig_menu.get_external_metarigs(custom_metarigs_folder)
         template_list.get_external_templates(custom_templates_folder)
