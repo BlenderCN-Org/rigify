@@ -102,7 +102,6 @@ col_enum_list = [("All", "All", ""), ("None", "None", "")] + [(c, c, "") for c i
 def get_external_rigs(custom_rigs_folder):
     if custom_rigs_folder:
         MODULE_DIR = os.path.dirname(custom_rigs_folder)
-        print(custom_rigs_folder)
         utils.get_resource('__init__', base_path=custom_rigs_folder, resource_type='RIG')
         external_rigs_dict = get_rig_list(MODULE_DIR, utils.RIG_DIR)
         rigs_dict['external'] = external_rigs_dict

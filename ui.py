@@ -77,7 +77,6 @@ class DATA_PT_rigify_buttons(bpy.types.Panel):
                     break
             for b in obj.pose.bones:
                 if b.rigify_type in outdated_types.keys():
-                    print(b.rigify_type)
                     if outdated_types[b.rigify_type]:
                         show_update_metarig = True
                     else:

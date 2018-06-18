@@ -121,6 +121,7 @@ class RigifyPreferences(AddonPreferences):
             globals()['metarig_menu'] = metarig_menu
 
             register()
+            self.legacy_mode = False
             self.update_external_rigs(context)
 
     def update_external_rigs(self, context):
@@ -149,7 +150,6 @@ class RigifyPreferences(AddonPreferences):
         else:
             # Reload rigs
             if utils.RIG_DIR in os.listdir(custom_folder):
-
                 if custom_folder not in sys.path:
                     sys.path.append(custom_folder)
 
@@ -171,12 +171,19 @@ class RigifyPreferences(AddonPreferences):
                 if custom_metarigs_folder not in sys.path:
                     sys.path.append(custom_metarigs_folder)
 
+            else:
+                custom_metarigs_folder = ''
+
             # Reload templates
             if utils.TEMPLATE_DIR in os.listdir(custom_folder):
                 custom_templates_folder = os.path.join(custom_folder, utils.TEMPLATE_DIR)
+            else:
+                custom_templates_folder = ''
 
-        metarig_menu.get_external_metarigs(custom_metarigs_folder)
-        template_list.get_external_templates(custom_templates_folder)
+        if custom_metarigs_folder:
+            metarig_menu.get_external_metarigs(custom_metarigs_folder)
+        if custom_templates_folder:
+            template_list.get_external_templates(custom_templates_folder)
 
     legacy_mode = BoolProperty(
         name='Rigify Legacy Mode',
