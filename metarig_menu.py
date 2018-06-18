@@ -153,7 +153,8 @@ def create_metarig_ops(dic=metarigs_dict):
         if metarig_class == "external":
             create_metarig_ops(dic[metarig_class])
             continue
-        metarig_ops[metarig_class] = []
+        if not metarig_class in metarig_ops:
+            metarig_ops[metarig_class] = []
         for m in dic[metarig_class]:
             name = m.__name__.rsplit('.', 1)[1]
 

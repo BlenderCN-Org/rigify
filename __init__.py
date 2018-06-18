@@ -180,10 +180,8 @@ class RigifyPreferences(AddonPreferences):
             else:
                 custom_templates_folder = ''
 
-        if custom_metarigs_folder:
-            metarig_menu.get_external_metarigs(custom_metarigs_folder)
-        if custom_templates_folder:
-            template_list.get_external_templates(custom_templates_folder)
+        metarig_menu.get_external_metarigs(custom_metarigs_folder)
+        template_list.get_external_templates(custom_templates_folder)
 
     legacy_mode = BoolProperty(
         name='Rigify Legacy Mode',
@@ -443,7 +441,7 @@ def register():
     if not bpy.context.user_preferences.addons['rigify'].preferences.legacy_mode:
         external_rigs_folder = bpy.context.user_preferences.addons['rigify'].preferences.custom_folder
         if external_rigs_folder and not 'external' in rig_lists.rigs_dict:
-            #force update on reload
+            # force update on reload
             bpy.context.user_preferences.addons['rigify'].preferences.custom_folder = external_rigs_folder
 
 
@@ -481,8 +479,11 @@ def unregister():
 
     bpy.utils.unregister_class(RigifyArmatureLayer)
 
-    if bpy.context.user_preferences.addons['rigify'].preferences.custom_folder in sys.path:
-        sys.path.remove(bpy.context.user_preferences.addons['rigify'].preferences.custom_folder)
+    custom_folder = bpy.context.user_preferences.addons['rigify'].preferences.custom_folder
+    if custom_folder in sys.path:
+        sys.path.remove(custom_folder)
+    if os.path.join(custom_folder, utils.METARIG_DIR) in sys.path:
+        sys.path.remove(os.path.join(custom_folder, utils.METARIG_DIR))
     bpy.utils.unregister_class(RigifyPreferences)
 
     metarig_menu.unregister()
