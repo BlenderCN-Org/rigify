@@ -115,15 +115,19 @@ def make_submenu_func(bl_idname, text):
 
 
 # Get the metarig modules
-MODULE_DIR = os.path.dirname(os.path.dirname(__file__))
-if MODULE_DIR not in sys.path:
-    sys.path.append(MODULE_DIR)
+def get_internal_metarigs():
+    MODULE_DIR = os.path.dirname(os.path.dirname(__file__))
+    if MODULE_DIR not in sys.path:
+        sys.path.append(MODULE_DIR)
 
-metarigs = get_metarigs(MODULE_DIR, os.path.join(os.path.basename(os.path.dirname(__file__)), utils.METARIG_DIR, ''))
+    metarigs.update(get_metarigs(MODULE_DIR, os.path.join(os.path.basename(os.path.dirname(__file__)), utils.METARIG_DIR, '')))
+
+metarigs = {}
 metarig_ops = {}
 armature_submenus = []
 menu_funcs = []
 
+get_internal_metarigs()
 
 def create_metarig_ops(dic=metarigs):
     """Create metarig add Operators"""
@@ -202,7 +206,9 @@ def unregister():
 def get_external_metarigs(feature_sets_path):
     unregister()
 
-    # TODO remove previous external metarigs
+    # Clear and fill metarigs public variables
+    metarigs.clear()
+    get_internal_metarigs()
 
     for feature_set in os.listdir(feature_sets_path):
         if feature_set:

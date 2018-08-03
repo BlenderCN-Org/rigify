@@ -79,7 +79,7 @@ rigs, implementation_rigs = get_rigs(MODULE_DIR, os.path.join(os.path.basename(o
 
 def get_external_rigs(feature_sets_path):
     # Clear and fill rigify rigs and implementation rigs public variables
-    for rig in rigs.keys():
+    for rig in list(rigs.keys()):
         if rigs[rig]["feature_set"] != "rigify":
             rigs.pop(rig)
             if rig in implementation_rigs:
