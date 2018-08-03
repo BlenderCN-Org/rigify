@@ -17,6 +17,7 @@
 #======================= END GPL LICENSE BLOCK ========================
 
 import os
+import sys
 
 from . import utils
 
@@ -24,12 +25,12 @@ from . import utils
 def get_template_list(path=''):
     """ Searches for template types, and returns a list.
     """
-    if not path:
-        MODULE_DIR = os.path.dirname(__file__)
-        TEMPLATE_DIR_ABS = os.path.join(MODULE_DIR, utils.TEMPLATE_DIR)
-    else:
-        TEMPLATE_DIR_ABS = path
-    files = os.listdir(TEMPLATE_DIR_ABS)
+    # if not path:
+    #     MODULE_DIR = os.path.dirname(__file__)
+    #     TEMPLATE_DIR_ABS = os.path.join(MODULE_DIR, utils.TEMPLATE_DIR)
+    # else:
+    #     TEMPLATE_DIR_ABS = path
+    files = os.listdir(os.path.join(path, utils.TEMPLATE_DIR))
     files.sort()
 
     files = [f for f in files if f.endswith(".py") and not f.startswith('_')]
@@ -39,22 +40,27 @@ def get_template_list(path=''):
 def fill_ui_template_list(obj):
     """Fill rig's UI template list
     """
-    armature_id_store = obj.data
-    for i in range(0, len(armature_id_store.rigify_templates)):
-        armature_id_store.rigify_templates.remove(0)
+    armature = obj.data
+    for i in range(0, len(armature.rigify_templates)):
+        armature.rigify_templates.remove(0)
 
     for t in template_list:
-        a = armature_id_store.rigify_templates.add()
+        a = armature.rigify_templates.add()
         a.name = t[:-3]
 
 
 # Public variables
-template_list = get_template_list()
+# MODULE_DIR = os.path.dirname(os.path.dirname(__file__))
+
+template_list = get_template_list(os.path.dirname(__file__))
 
 
-def get_external_templates(custom_templates_folder):
+def get_external_templates(feature_sets_path):
     global template_list
-    template_list = get_template_list()
-    if custom_templates_folder:
-        external_templates_list = get_template_list(custom_templates_folder)
-        template_list.extend(external_templates_list)
+    template_list = get_template_list(os.path.dirname(__file__))
+    for feature_set in os.listdir(feature_sets_path):
+        if feature_set:
+            feature_set_path = os.path.join(feature_sets_path, feature_set)
+
+            external_templates_list = get_template_list(feature_set_path)
+            template_list.extend(external_templates_list)

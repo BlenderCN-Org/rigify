@@ -23,7 +23,7 @@ import bpy
 from . import utils
 
 
-def get_rig_list(base_path, path):
+def get_rigs(base_path, path, feature_set='rigify'):
     """ Recursively searches for rig types, and returns a list.
 
     :param base_path: base dir where rigs are stored
@@ -32,9 +32,8 @@ def get_rig_list(base_path, path):
     :type path:str
     """
 
-    rigs_dict = dict()
-    rigs = []
-    impl_rigs = []
+    rigs = {}
+    impl_rigs = {}
 
     files = os.listdir(os.path.join(base_path, path))
     files.sort()
@@ -52,39 +51,38 @@ def get_rig_list(base_path, path):
         if is_dir:
             # Check directories
             module_name = os.path.join(path, "__init__").replace(os.sep, ".")
-            rig = utils.get_resource(module_name, base_path=base_path, resource_type='RIG')
+            # rig_module = utils.get_resource(module_name, base_path=base_path, resource_type='RIG')
             # Check if it's a rig itself
-            if hasattr(rig, "Rig"):
-                rigs += [f]
-            else:
-                # Check for sub-rigs
-                sub_dict = get_rig_list(base_path, os.path.join(path, f, ""))  # "" adds a final slash
-                rigs.extend(["%s.%s" % (f, l) for l in sub_dict['rig_list']])
-                impl_rigs.extend(["%s.%s" % (f, l) for l in sub_dict['implementation_rigs']])
+            # if hasattr(rig_module, "Rig"):
+            # if False:
+            #     rigs[f] = {"module": rig_module,
+            #                "feature_set": feature_set}
+            # else:
+            # Check for sub-rigs
+            sub_rigs, sub_impls = get_rigs(base_path, os.path.join(path, f, ""), feature_set)  # "" adds a final slash
+            rigs.update({"%s.%s" % (f, l): sub_rigs[l] for l in sub_rigs})
+            impl_rigs.update({"%s.%s" % (f, l): sub_rigs[l] for l in sub_impls})
         elif f.endswith(".py"):
             # Check straight-up python files
-            t = f[:-3]
-            module_name = os.path.join(path, t).replace(os.sep, ".")
-            rig = utils.get_resource(module_name, base_path=base_path, resource_type='RIG')
-            if hasattr(rig, "Rig"):
-                rigs += [t]
-            if hasattr(rig, 'IMPLEMENTATION') and rig.IMPLEMENTATION:
-                impl_rigs += [t]
-    rigs.sort()
+            f = f[:-3]
+            module_name = os.path.join(path, f).replace(os.sep, ".")
+            rig_module = utils.get_resource(module_name, base_path=base_path, resource_type='RIG')
+            if hasattr(rig_module, "Rig"):
+                rigs[f] = {"module": rig_module,
+                           "feature_set": feature_set}
+            if hasattr(rig_module, 'IMPLEMENTATION') and rig_module.IMPLEMENTATION:
+                impl_rigs[f] = rig_module
 
-    rigs_dict['rig_list'] = rigs
-    rigs_dict['implementation_rigs'] = impl_rigs
-
-    return rigs_dict
+    return rigs, impl_rigs
 
 
-def get_collection_list(rig_list):
-    collection_list = []
-    for r in rig_list:
-        a = r.split(".")
-        if len(a) >= 2 and a[0] not in collection_list:
-            collection_list += [a[0]]
-    return collection_list
+# def get_collection_list(rigs):
+#     collection_list = []
+#     for r in rigs:
+#         a = r.split(".")
+#         if len(a) >= 2 and a[0] not in collection_list:
+#             collection_list += [a[0]]
+#     return collection_list
 
 
 # Public variables
@@ -92,16 +90,37 @@ MODULE_DIR = os.path.dirname(os.path.dirname(__file__))
 if MODULE_DIR not in sys.path:
     sys.path.append(MODULE_DIR)
 
-rigs_dict = get_rig_list(MODULE_DIR, os.path.join(os.path.basename(os.path.dirname(__file__)), utils.RIG_DIR, ''))
-rig_list = rigs_dict['rig_list']
-implementation_rigs = rigs_dict['implementation_rigs']
-collection_list = get_collection_list(rig_list)
-col_enum_list = [("All", "All", ""), ("None", "None", "")] + [(c, c, "") for c in collection_list]
+rigs, implementation_rigs = get_rigs(MODULE_DIR, os.path.join(os.path.basename(os.path.dirname(__file__)), utils.RIG_DIR, ''))
+# collection_list = get_collection_list(sorted(rigs.keys()))
+# col_enum_list = [("All", "All", ""), ("None", "None", "")] + [(c, c, "") for c in collection_list]
 
 
-def get_external_rigs(custom_rigs_folder):
-    if custom_rigs_folder:
-        MODULE_DIR = os.path.dirname(custom_rigs_folder)
-        utils.get_resource('__init__', base_path=custom_rigs_folder, resource_type='RIG')
-        external_rigs_dict = get_rig_list(MODULE_DIR, utils.RIG_DIR)
-        rigs_dict['external'] = external_rigs_dict
+def get_external_rigs(feature_sets_path):
+    # Clear and fill rigify rigs and implementation rigs public variables
+    for rig in rigs.keys():
+        if rigs[rig]["feature_set"] != "rigify":
+            rigs.pop(rig)
+            if rig in implementation_rigs:
+                implementation_rigs.pop(rig)
+    # rigs.clear()
+    # implementation_rigs.clear()
+    # new_rigs, new_implementation_rigs = get_rigs(
+    #     MODULE_DIR,
+    #     os.path.join(
+    #         os.path.basename(os.path.dirname(__file__)), utils.RIG_DIR, ''
+    #     )
+    # )
+    # rigs.update(new_rigs)
+    # implementation_rigs.update(new_implementation_rigs)
+
+    # Get external rigs
+    for feature_set in os.listdir(feature_sets_path):
+        if feature_set:
+            feature_set_path = os.path.join(feature_sets_path, feature_set)
+            if feature_set_path not in sys.path:
+                sys.path.append(feature_set_path)
+
+            utils.get_resource('__init__', base_path=feature_set_path, resource_type='RIG')
+            external_rigs, external_impl_rigs = get_rigs(feature_set_path, utils.RIG_DIR, feature_set)
+            rigs.update(external_rigs)
+            implementation_rigs.update(external_impl_rigs)

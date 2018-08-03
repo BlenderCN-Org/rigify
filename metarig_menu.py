@@ -19,14 +19,14 @@
 # <pep8 compliant>
 
 import os
+import sys
 from string import capwords
 
 import bpy
 
 from . import utils
 from . import template_list
-
-
+from pprint import pprint
 
 class ArmatureSubMenu(bpy.types.Menu):
     # bl_idname = 'ARMATURE_MT_armature_class'
@@ -39,65 +39,45 @@ class ArmatureSubMenu(bpy.types.Menu):
             layout.operator(op, icon='OUTLINER_OB_ARMATURE', text=text)
 
 
-def get_metarig_list(path, mode='relative', depth=0):
+def get_metarigs(base_path, path, depth=0):
     """ Searches for metarig modules, and returns a list of the
         imported modules.
     """
-    if mode == 'relative':
-        base_path = ''
-        MODULE_DIR = os.path.dirname(__file__)
-        METARIG_DIR_ABS = os.path.join(MODULE_DIR, utils.METARIG_DIR)
-        SEARCH_DIR_ABS = os.path.join(METARIG_DIR_ABS, path)
-    elif mode == 'absolute':
-        base_path = path
-        SEARCH_DIR_ABS = path
-    else:
-        return
 
-    metarigs_dict = dict()
-    metarigs = []
-    files = os.listdir(SEARCH_DIR_ABS)
+    metarigs = {}
+
+    files = os.listdir(os.path.join(base_path, path))
     files.sort()
 
     for f in files:
-        is_dir = os.path.isdir(os.path.join(SEARCH_DIR_ABS, f))  # Whether the file is a directory
+        is_dir = os.path.isdir(os.path.join(base_path, path, f))  # Whether the file is a directory
 
         # Stop cases
         if f[0] in [".", "_"]:
             continue
         if f.count(".") >= 2 or (is_dir and "." in f):
-            print("Warning: %r, filename contains a '.', skipping" % os.path.join(SEARCH_DIR_ABS, f))
+            print("Warning: %r, filename contains a '.', skipping" % os.path.join(path, f))
             continue
 
         if is_dir:
-            # Check directories
-            if mode == 'relative':
-                module_name = os.path.join(path, f).replace(os.sep, ".")
-                metarig = utils.get_resource(module_name, base_path=base_path, resource_type='METARIG')
-            else:
-                module_name = "__init__"
-                metarig = utils.get_resource(module_name, base_path=os.path.join(base_path, f, ''), resource_type='METARIG')
+            # # Check directories
+            # module_name = os.path.join(path, "__init__").replace(os.sep, ".")
+            # metarig_module = utils.get_resource(module_name, base_path=base_path, resource_type='METARIG')
 
-            # Check for sub-rigs
-            metarigs_dict[f] = get_metarig_list(os.path.join(path, f, ""), mode=mode, depth=1)  # "" adds a final slash
+            # Check for sub-metarigs
+            metarigs[f] = get_metarigs(base_path, os.path.join(path, f, ""), depth=1)  # "" adds a final slash
         elif f.endswith(".py"):
             # Check straight-up python files
-            t = f[:-3]
-            if mode == 'relative':
-                module_name = os.path.join(path, t).replace(os.sep, ".")
-                metarig = utils.get_resource(module_name, base_path=base_path, resource_type='METARIG')
+            f = f[:-3]
+            module_name = os.path.join(path, f).replace(os.sep, ".")
+            metarig_module = utils.get_resource(module_name, base_path=base_path, resource_type='METARIG')
+            if depth == 1:
+                metarigs[f] = metarig_module
             else:
-                custom_folder = bpy.context.user_preferences.addons['rigify'].preferences.custom_folder
-                custom_metarigs_folder = os.path.join(custom_folder, utils.METARIG_DIR, '')
-                module_name = os.path.join(path, t).replace(custom_metarigs_folder, '').replace(os.sep, ".")
-                metarig = utils.get_resource(module_name, base_path=custom_metarigs_folder, resource_type='METARIG')
-            metarigs += [metarig]
+                metarigs[utils.METARIG_DIR] = {f: metarig_module}
 
-    if depth == 1:
-        return metarigs
-
-    metarigs_dict[utils.METARIG_DIR] = metarigs
-    return metarigs_dict
+    # metarigs[utils.METARIG_DIR] = metarigs
+    return metarigs
 
 
 def make_metarig_add_execute(m):
@@ -141,21 +121,26 @@ def make_submenu_func(bl_idname, text):
 
 
 # Get the metarig modules
-metarigs_dict = get_metarig_list("")
+MODULE_DIR = os.path.dirname(os.path.dirname(__file__))
+if MODULE_DIR not in sys.path:
+    sys.path.append(MODULE_DIR)
+
+metarigs = get_metarigs(MODULE_DIR, os.path.join(os.path.basename(os.path.dirname(__file__)), utils.METARIG_DIR, ''))
 metarig_ops = {}
 armature_submenus = []
 menu_funcs = []
 
 
-def create_metarig_ops(dic=metarigs_dict):
+def create_metarig_ops(dic=metarigs):
     """Create metarig add Operators"""
-    for metarig_class in dic:
-        if metarig_class == "external":
-            create_metarig_ops(dic[metarig_class])
+    pprint(dic)
+    for metarig_category in dic:
+        if metarig_category == "external":
+            create_metarig_ops(dic[metarig_category])
             continue
-        if not metarig_class in metarig_ops:
-            metarig_ops[metarig_class] = []
-        for m in dic[metarig_class]:
+        if not metarig_category in metarig_ops:
+            metarig_ops[metarig_category] = []
+        for m in dic[metarig_category].values():
             name = m.__name__.rsplit('.', 1)[1]
 
             # Dynamically construct an Operator
@@ -165,7 +150,7 @@ def create_metarig_ops(dic=metarigs_dict):
             T.bl_options = {'REGISTER', 'UNDO'}
             T.execute = make_metarig_add_execute(m)
 
-            metarig_ops[metarig_class].append((T, name))
+            metarig_ops[metarig_category].append((T, name))
 
 def create_menu_funcs():
     global menu_funcs
@@ -173,26 +158,26 @@ def create_menu_funcs():
         text = capwords(name.replace("_", " ")) + " (Meta-Rig)"
         menu_funcs += [make_metarig_menu_func(mop.bl_idname, text)]
 
-def create_armature_submenus(dic=metarigs_dict):
+def create_armature_submenus(dic=metarigs):
     global menu_funcs
-    metarig_classes = list(dic.keys())
-    metarig_classes.sort()
-    for metarig_class in metarig_classes:
+    metarig_categories = list(dic.keys())
+    metarig_categories.sort()
+    for metarig_category in metarig_categories:
         # Create menu functions
-        if metarig_class == "external":
-            create_armature_submenus(dic=metarigs_dict["external"])
+        if metarig_category == "external":
+            create_armature_submenus(dic=metarigs["external"])
             continue
-        if metarig_class == utils.METARIG_DIR:
+        if metarig_category == utils.METARIG_DIR:
             continue
 
-        armature_submenus.append(type('Class_' + metarig_class + '_submenu', (ArmatureSubMenu,), {}))
-        armature_submenus[-1].bl_label = metarig_class + ' (submenu)'
-        armature_submenus[-1].bl_idname = 'ARMATURE_MT_%s_class' % metarig_class
+        armature_submenus.append(type('Class_' + metarig_category + '_submenu', (ArmatureSubMenu,), {}))
+        armature_submenus[-1].bl_label = metarig_category + ' (submenu)'
+        armature_submenus[-1].bl_idname = 'ARMATURE_MT_%s_class' % metarig_category
         armature_submenus[-1].operators = []
-        menu_funcs += [make_submenu_func(armature_submenus[-1].bl_idname, metarig_class)]
+        menu_funcs += [make_submenu_func(armature_submenus[-1].bl_idname, metarig_category)]
 
-        for mop, name in metarig_ops[metarig_class]:
-            arm_sub = next((e for e in armature_submenus if e.bl_label == metarig_class + ' (submenu)'), '')
+        for mop, name in metarig_ops[metarig_category]:
+            arm_sub = next((e for e in armature_submenus if e.bl_label == metarig_category + ' (submenu)'), '')
             arm_sub.operators.append((mop.bl_idname, name,))
 
 create_metarig_ops()
@@ -221,11 +206,18 @@ def unregister():
     for mf in menu_funcs:
         bpy.types.INFO_MT_armature_add.remove(mf)
 
-def get_external_metarigs(custom_metarigs_folder):
+def get_external_metarigs(feature_sets_path):
     unregister()
 
-    if custom_metarigs_folder:
-        metarigs_dict['external'] = get_metarig_list(custom_metarigs_folder, mode='absolute')
+    for feature_set in os.listdir(feature_sets_path):
+        if feature_set:
+            feature_set_path = os.path.join(feature_sets_path, feature_set)
+            if feature_set_path not in sys.path:
+                sys.path.append(feature_set_path)
+
+            utils.get_resource('__init__', base_path=feature_set_path, resource_type='METARIG')
+
+            metarigs['external'] = get_metarigs(feature_set_path, utils.METARIG_DIR)
 
     metarig_ops.clear()
     armature_submenus.clear()

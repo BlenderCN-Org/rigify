@@ -635,15 +635,16 @@ def get_bone_rigs(obj, bone_name, halt_on_missing=False):
 
         # Get the rig
         try:
-            if (
-                    'external' in rig_lists.rigs_dict
-                    and rig_type in rig_lists.rigs_dict['external']['rig_list']):
-                custom_folder = bpy.context.user_preferences.addons['rigify'].preferences.custom_folder
-                rig = get_resource(RIG_DIR + '.' + rig_type, base_path=custom_folder, resource_type='RIG')
-            else:
-                rig = get_resource(rig_type, resource_type='RIG')
+            # if (
+            #         'external' in rig_lists.rigs_dict
+            #         and rig_type in rig_lists.rigs_dict['external']['rig_list']):
+            #     custom_folder = bpy.context.user_preferences.addons['rigify'].preferences.custom_folder
+            #     rig = get_resource(RIG_DIR + '.' + rig_type, base_path=custom_folder, resource_type='RIG')
+            # else:
+            #     rig = get_resource(rig_type, resource_type='RIG')
+            rig = rig_lists.rigs[rig_type]["module"]
             rig = rig.Rig(obj, bone_name, params)
-        except ImportError:
+        except (KeyError, ImportError):
             message = "Rig Type Missing: python module for type '%s' not found (bone: %s)" % (rig_type, bone_name)
             if halt_on_missing:
                 raise MetarigError(message)

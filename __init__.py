@@ -38,8 +38,10 @@ if "bpy" in locals():
     importlib.reload(metarig_menu)
     importlib.reload(rig_lists)
     importlib.reload(template_list)
+    importlib.reload(feature_sets)
 else:
-    from . import utils, rig_lists, template_list, generate, ui, metarig_menu
+    from . import (utils, rig_lists, template_list,
+                   generate, ui, metarig_menu, feature_sets)
 
 import bpy
 import sys
@@ -48,7 +50,6 @@ from bpy.types import AddonPreferences
 from bpy.props import BoolProperty
 from bpy.props import StringProperty
 
-previous_custom_folder = ''
 
 class RigifyPreferences(AddonPreferences):
     # this must match the addon name, use '__package__'
@@ -124,74 +125,34 @@ class RigifyPreferences(AddonPreferences):
             self.legacy_mode = False
             self.update_external_rigs(context)
 
-    def update_external_rigs(self, context):
-
+    def update_external_rigs(self):
+        """Get external feature sets"""
         if self.legacy_mode:
             return
 
-        custom_folder = bpy.context.user_preferences.addons['rigify'].preferences.custom_folder
+        feature_sets_path = os.path.join(bpy.utils.script_path_user(), 'rigify')
 
-        # Remove previous custom folder from path
-        global previous_custom_folder
-        if previous_custom_folder:
-            for path in sys.path[:]:
-                if previous_custom_folder in path:
-                    sys.path.remove(path)
-        previous_custom_folder = custom_folder
-
-        invalid_path = (custom_folder == "" or not os.path.exists(custom_folder))
-        if invalid_path or utils.RIG_DIR not in os.listdir(custom_folder):
-            if 'external' in rig_lists.rigs_dict:
-                rig_lists.rigs_dict.pop('external')
-        else:
+        invalid_path = not os.path.exists(feature_sets_path)
+        if not invalid_path:
+            if feature_sets_path not in sys.path:
+                sys.path.append(feature_sets_path)
             # Reload rigs
-            if utils.RIG_DIR in os.listdir(custom_folder):
-                if custom_folder not in sys.path:
-                    sys.path.append(custom_folder)
+            print('Reloading external rigs...')
+            rig_lists.get_external_rigs(feature_sets_path)
 
-                rig_lists.get_external_rigs(custom_folder)
-                if rig_lists.rigs_dict['external']:
-                    # Add external rig parameters
-                    for rig in rig_lists.rigs_dict['external']['rig_list']:
-                        MODULE_DIR = os.path.dirname(custom_folder)
-                        r = utils.get_resource('.'.join((utils.RIG_DIR, rig)), base_path=MODULE_DIR)
-                        try:
-                            r.add_parameters(RigifyParameters)
-                        except AttributeError:
-                            pass
-
-        if invalid_path or utils.METARIG_DIR not in os.listdir(custom_folder):
-            custom_metarigs_folder = ''
-            if 'external' in metarig_menu.metarigs_dict:
-                metarig_menu.metarigs_dict.pop('external')
-        else:
             # Reload metarigs
-            custom_metarigs_folder = os.path.join(custom_folder, utils.METARIG_DIR)
-            if custom_metarigs_folder not in sys.path:
-                sys.path.append(custom_metarigs_folder)
+            print('Reloading external metarigs...')
+            metarig_menu.get_external_metarigs(feature_sets_path)
 
-        if invalid_path or utils.TEMPLATE_DIR not in os.listdir(custom_folder):
-            custom_templates_folder = ''
-        else:
             # Reload templates
-            custom_templates_folder = os.path.join(custom_folder, utils.TEMPLATE_DIR)
-
-        metarig_menu.get_external_metarigs(custom_metarigs_folder)
-        template_list.get_external_templates(custom_templates_folder)
+            print('Reloading external templates...')
+            template_list.get_external_templates(feature_sets_path)
 
     legacy_mode = BoolProperty(
         name='Rigify Legacy Mode',
         description='Select if you want to use Rigify in legacy mode',
         default=False,
         update=update_legacy
-    )
-
-    custom_folder = StringProperty(
-        name='Rigify Custom Rigs',
-        description='Folder Containing User Defined Rig Types',
-        default='',
-        subtype='DIR_PATH',
-        update=update_external_rigs
     )
 
     show_expanded = BoolProperty()
@@ -235,12 +196,20 @@ class RigifyPreferences(AddonPreferences):
         op = sub.operator('wm.context_toggle', text='', icon=icon,
                           emboss=False)
         op.data_path = 'addon_prefs.show_rigs_folder_expanded'
-        row.prop(self, 'custom_folder')
-
+        sub.label('{}: {}'.format('Rigify', 'External feature sets'))
         if rigs_expand:
+            feature_sets_path = os.path.join(bpy.utils.script_path_user(), 'rigify')
+            for fs in os.listdir(feature_sets_path):
+                row = col.row()
+                row.label(fs)
+                op = row.operator("wm.rigify_remove_feature_set", text="Remove", icon='CANCEL')
+                op.featureset = fs
+            row = col.row(align=True)
+            row.operator("wm.rigify_add_feature_set", text="Install Feature Set from File...", icon='FILESEL')
+
             split = col.row().split(percentage=0.15)
             split.label('Description:')
-            split.label(text='This is the folder containing user defined Rig Types')
+            split.label(text='External feature sets (rigs, metarigs, ui layouts)')
 
         row = layout.row()
         row.label("End of Rigify Preferences")
@@ -328,6 +297,7 @@ class RigifyArmatureLayer(bpy.types.PropertyGroup):
 
 def register():
     ui.register()
+    feature_sets.register()
     metarig_menu.register()
 
     bpy.utils.register_class(RigifyName)
@@ -339,6 +309,14 @@ def register():
     bpy.utils.register_class(RigifyArmatureLayer)
     bpy.utils.register_class(RigifyPreferences)
     bpy.types.Armature.rigify_layers = bpy.props.CollectionProperty(type=RigifyArmatureLayer)
+
+
+
+    bpy.types.Armature.active_feature_set = bpy.props.EnumProperty(
+        items=feature_sets.feature_set_items,
+        name="Feature Set",
+        description="Feature set to select from for this bone"
+        )
 
     bpy.types.PoseBone.rigify_type = bpy.props.StringProperty(name="Rigify Type", description="Rig type for this bone")
     bpy.types.PoseBone.rigify_parameters = bpy.props.PointerProperty(type=RigifyParameters)
@@ -373,9 +351,9 @@ def register():
                                                                            ), name='Theme')
 
     IDStore = bpy.types.WindowManager
-    IDStore.rigify_collection = bpy.props.EnumProperty(items=rig_lists.col_enum_list, default="All",
-                                                       name="Rigify Active Collection",
-                                                       description="The selected rig collection")
+    # IDStore.rigify_collection = bpy.props.EnumProperty(items=rig_lists.col_enum_list, default="All",
+    #                                                    name="Rigify Active Collection",
+    #                                                    description="The selected rig collection")
 
     IDStore.rigify_types = bpy.props.CollectionProperty(type=RigifyName)
     IDStore.rigify_active_type = bpy.props.IntProperty(name="Rigify Active Type", description="The selected rig type")
@@ -423,22 +401,18 @@ def register():
     IDStore.rigify_templates = bpy.props.CollectionProperty(type=RigifyTemplate)
     IDStore.rigify_active_template = bpy.props.IntProperty(name="Rigify Active Template", description="The selected ui template", default=0)
 
+    bpy.context.user_preferences.addons['rigify'].preferences.update_external_rigs()
+
     # Add rig parameters
-    for rig in rig_lists.rig_list:
+    for rig in rig_lists.rigs:
         if bpy.context.user_preferences.addons['rigify'].preferences.legacy_mode:
             r = utils.get_rig_type(rig)
         else:
-            r = utils.get_resource(rig)
+            r = rig_lists.rigs[rig]['module']
         try:
             r.add_parameters(RigifyParameters)
         except AttributeError:
             pass
-
-    if not bpy.context.user_preferences.addons['rigify'].preferences.legacy_mode:
-        external_rigs_folder = bpy.context.user_preferences.addons['rigify'].preferences.custom_folder
-        if external_rigs_folder and not 'external' in rig_lists.rigs_dict:
-            # force update on reload
-            bpy.context.user_preferences.addons['rigify'].preferences.custom_folder = external_rigs_folder
 
 
 def unregister():
@@ -447,7 +421,7 @@ def unregister():
     del bpy.types.PoseBone.rigify_glue
 
     IDStore = bpy.types.WindowManager
-    del IDStore.rigify_collection
+    # del IDStore.rigify_collection
     del IDStore.rigify_types
     del IDStore.rigify_active_type
     del IDStore.rigify_advanced_generation
@@ -474,13 +448,14 @@ def unregister():
     bpy.utils.unregister_class(RigifySelectionColors)
 
     bpy.utils.unregister_class(RigifyArmatureLayer)
-
-    custom_folder = bpy.context.user_preferences.addons['rigify'].preferences.custom_folder
-    if custom_folder in sys.path:
-        sys.path.remove(custom_folder)
-    if os.path.join(custom_folder, utils.METARIG_DIR) in sys.path:
-        sys.path.remove(os.path.join(custom_folder, utils.METARIG_DIR))
-    bpy.utils.unregister_class(RigifyPreferences)
+    # custom_folder = bpy.context.user_preferences.addons['rigify'].preferences.custom_folder
+    # if custom_folder in sys.path:
+    #     sys.path.remove(custom_folder)
+    # if os.path.join(custom_folder, utils.METARIG_DIR) in sys.path:
+    #     sys.path.remove(os.path.join(custom_folder, utils.METARIG_DIR))
+    if "bl_rna" in RigifyPreferences.__dict__:
+        bpy.utils.unregister_class(RigifyPreferences)
 
     metarig_menu.unregister()
     ui.unregister()
+    feature_sets.unregister()
