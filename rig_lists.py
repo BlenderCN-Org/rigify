@@ -70,8 +70,6 @@ def get_rigs(base_path, path, feature_set='rigify'):
 
 # Public variables
 MODULE_DIR = os.path.dirname(os.path.dirname(__file__))
-if MODULE_DIR not in sys.path:
-    sys.path.append(MODULE_DIR)
 
 rigs, implementation_rigs = get_rigs(MODULE_DIR, os.path.join(os.path.basename(os.path.dirname(__file__)), utils.RIG_DIR, ''))
 
@@ -87,11 +85,7 @@ def get_external_rigs(feature_sets_path):
     # Get external rigs
     for feature_set in os.listdir(feature_sets_path):
         if feature_set:
-            feature_set_path = os.path.join(feature_sets_path, feature_set)
-            if feature_set_path not in sys.path:
-                sys.path.append(feature_set_path)
-
-            utils.get_resource('__init__', base_path=feature_set_path)
-            external_rigs, external_impl_rigs = get_rigs(feature_set_path, utils.RIG_DIR, feature_set)
+            utils.get_resource(os.path.join(feature_set, '__init__'), feature_sets_path)
+            external_rigs, external_impl_rigs = get_rigs(feature_sets_path, os.path.join(feature_set, utils.RIG_DIR), feature_set)
             rigs.update(external_rigs)
             implementation_rigs.update(external_impl_rigs)

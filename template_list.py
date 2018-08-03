@@ -53,8 +53,6 @@ def fill_ui_template_list(obj):
 
 # Public variables
 MODULE_DIR = os.path.dirname(os.path.dirname(__file__))
-if MODULE_DIR not in sys.path:
-    sys.path.append(MODULE_DIR)
 
 templates = get_templates(MODULE_DIR, os.path.join(os.path.basename(os.path.dirname(__file__)), utils.TEMPLATE_DIR, ''))
 
@@ -67,7 +65,5 @@ def get_external_templates(feature_sets_path):
     # Get external templates
     for feature_set in os.listdir(feature_sets_path):
         if feature_set:
-            feature_set_path = os.path.join(feature_sets_path, feature_set)
-
-            external_templates_list = get_templates(feature_set_path, utils.TEMPLATE_DIR)
+            external_templates_list = get_templates(feature_sets_path, os.path.join(feature_set, utils.TEMPLATE_DIR))
             templates.update(external_templates_list)
