@@ -22,14 +22,21 @@ import sys
 from . import utils
 
 
-def get_template_list(path=''):
+def get_templates(base_path, path):
     """ Searches for template types, and returns a list.
     """
-    files = os.listdir(os.path.join(path, utils.TEMPLATE_DIR))
+    templates = {}
+
+    files = os.listdir(os.path.join(base_path, path))
     files.sort()
 
-    files = [f for f in files if f.endswith(".py") and not f.startswith('_')]
-    return files
+    for f in files:
+        if f.endswith(".py"):
+            f = f[:-3]
+            module_name = os.path.join(path, f).replace(os.sep, ".")
+            template = utils.get_resource(module_name, base_path=base_path)
+            templates[f] = template
+    return templates
 
 
 def fill_ui_template_list(obj):
@@ -39,21 +46,28 @@ def fill_ui_template_list(obj):
     for i in range(0, len(armature.rigify_templates)):
         armature.rigify_templates.remove(0)
 
-    for t in template_list:
+    for t in templates:
         a = armature.rigify_templates.add()
-        a.name = t[:-3]
+        a.name = t
 
 
 # Public variables
-template_list = get_template_list(os.path.dirname(__file__))
+MODULE_DIR = os.path.dirname(os.path.dirname(__file__))
+if MODULE_DIR not in sys.path:
+    sys.path.append(MODULE_DIR)
+
+templates = get_templates(MODULE_DIR, os.path.join(os.path.basename(os.path.dirname(__file__)), utils.TEMPLATE_DIR, ''))
 
 
 def get_external_templates(feature_sets_path):
-    global template_list
-    template_list = get_template_list(os.path.dirname(__file__))
+    # Clear and get internal templates
+    templates.clear()
+    templates.update(get_templates(MODULE_DIR, os.path.join(os.path.basename(os.path.dirname(__file__)), utils.TEMPLATE_DIR, '')))
+
+    # Get external templates
     for feature_set in os.listdir(feature_sets_path):
         if feature_set:
             feature_set_path = os.path.join(feature_sets_path, feature_set)
 
-            external_templates_list = get_template_list(feature_set_path)
-            template_list.extend(external_templates_list)
+            external_templates_list = get_templates(feature_set_path, utils.TEMPLATE_DIR)
+            templates.update(external_templates_list)

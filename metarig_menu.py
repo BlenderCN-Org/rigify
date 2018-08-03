@@ -65,7 +65,7 @@ def get_metarigs(base_path, path, depth=0):
             # Check straight-up python files
             f = f[:-3]
             module_name = os.path.join(path, f).replace(os.sep, ".")
-            metarig_module = utils.get_resource(module_name, base_path=base_path, resource_type='METARIG')
+            metarig_module = utils.get_resource(module_name, base_path=base_path)
             if depth == 1:
                 metarigs[f] = metarig_module
             else:
@@ -202,13 +202,15 @@ def unregister():
 def get_external_metarigs(feature_sets_path):
     unregister()
 
+    # TODO remove previous external metarigs
+
     for feature_set in os.listdir(feature_sets_path):
         if feature_set:
             feature_set_path = os.path.join(feature_sets_path, feature_set)
             if feature_set_path not in sys.path:
                 sys.path.append(feature_set_path)
 
-            utils.get_resource('__init__', base_path=feature_set_path, resource_type='METARIG')
+            utils.get_resource('__init__', base_path=feature_set_path)
 
             metarigs['external'] = get_metarigs(feature_set_path, utils.METARIG_DIR)
 

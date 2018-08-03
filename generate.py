@@ -497,16 +497,13 @@ def generate_rig(context, metarig):
     id_store.rigify_rig_ui = script.name
 
     id_store = context.armature
-    if len(template_list.template_list) > 1:
+    if len(template_list.templates) > 1:
         template_name = id_store.rigify_templates[id_store.rigify_active_template].name
     else:
-        template_name = template_list.template_list[0][:-3]
-    try:
-        template = get_resource(template_name, resource_type='UI_TEMPLATE')
-    except:
-        custom_folder = bpy.context.user_preferences.addons['rigify'].preferences.custom_folder
-        custom_templates_folder = os.path.join(custom_folder, TEMPLATE_DIR, '')
-        template = get_resource(template_name, custom_templates_folder, resource_type='UI_TEMPLATE')
+        template_name = 'rig_ui_template'
+
+    template = template_list.templates[template_name]
+
     script.write(template.UI_SLIDERS % rig_id)
     for s in ui_scripts:
         script.write("\n        " + s.replace("\n", "\n        ") + "\n")
@@ -635,13 +632,6 @@ def get_bone_rigs(obj, bone_name, halt_on_missing=False):
 
         # Get the rig
         try:
-            # if (
-            #         'external' in rig_lists.rigs_dict
-            #         and rig_type in rig_lists.rigs_dict['external']['rig_list']):
-            #     custom_folder = bpy.context.user_preferences.addons['rigify'].preferences.custom_folder
-            #     rig = get_resource(RIG_DIR + '.' + rig_type, base_path=custom_folder, resource_type='RIG')
-            # else:
-            #     rig = get_resource(rig_type, resource_type='RIG')
             rig = rig_lists.rigs[rig_type]["module"]
             rig = rig.Rig(obj, bone_name, params)
         except (KeyError, ImportError):
