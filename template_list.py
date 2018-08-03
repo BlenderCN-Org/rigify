@@ -25,11 +25,6 @@ from . import utils
 def get_template_list(path=''):
     """ Searches for template types, and returns a list.
     """
-    # if not path:
-    #     MODULE_DIR = os.path.dirname(__file__)
-    #     TEMPLATE_DIR_ABS = os.path.join(MODULE_DIR, utils.TEMPLATE_DIR)
-    # else:
-    #     TEMPLATE_DIR_ABS = path
     files = os.listdir(os.path.join(path, utils.TEMPLATE_DIR))
     files.sort()
 
@@ -50,8 +45,6 @@ def fill_ui_template_list(obj):
 
 
 # Public variables
-# MODULE_DIR = os.path.dirname(os.path.dirname(__file__))
-
 template_list = get_template_list(os.path.dirname(__file__))
 
 

@@ -26,7 +26,6 @@ import bpy
 
 from . import utils
 from . import template_list
-from pprint import pprint
 
 class ArmatureSubMenu(bpy.types.Menu):
     # bl_idname = 'ARMATURE_MT_armature_class'
@@ -59,11 +58,7 @@ def get_metarigs(base_path, path, depth=0):
             print("Warning: %r, filename contains a '.', skipping" % os.path.join(path, f))
             continue
 
-        if is_dir:
-            # # Check directories
-            # module_name = os.path.join(path, "__init__").replace(os.sep, ".")
-            # metarig_module = utils.get_resource(module_name, base_path=base_path, resource_type='METARIG')
-
+        if is_dir:  # Check directories
             # Check for sub-metarigs
             metarigs[f] = get_metarigs(base_path, os.path.join(path, f, ""), depth=1)  # "" adds a final slash
         elif f.endswith(".py"):
@@ -76,7 +71,6 @@ def get_metarigs(base_path, path, depth=0):
             else:
                 metarigs[utils.METARIG_DIR] = {f: metarig_module}
 
-    # metarigs[utils.METARIG_DIR] = metarigs
     return metarigs
 
 
@@ -133,7 +127,6 @@ menu_funcs = []
 
 def create_metarig_ops(dic=metarigs):
     """Create metarig add Operators"""
-    pprint(dic)
     for metarig_category in dic:
         if metarig_category == "external":
             create_metarig_ops(dic[metarig_category])

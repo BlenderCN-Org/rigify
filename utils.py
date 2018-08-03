@@ -970,7 +970,6 @@ def get_resource(resource_name, base_path='', resource_type='RIG'):
             for sub in resource_name.split('.')[1:]:
                 package = '.'.join([package, sub])
                 submod = importlib.import_module(package)
-                # importlib.reload(submod)
         else:
             module_subpath = resource_name
 

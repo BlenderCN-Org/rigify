@@ -39,7 +39,6 @@ class DATA_OT_rigify_add_feature_set(bpy.types.Operator):
     bl_options = {"REGISTER", "UNDO"}
 
     filter_glob = bpy.props.StringProperty(default="*.zip", options={'HIDDEN'})
-    # directory = StringProperty(maxlen=1024, subtype='FILE_PATH', options={'HIDDEN', 'SKIP_SAVE'})
     filepath = bpy.props.StringProperty(maxlen=1024, subtype='FILE_PATH', options={'HIDDEN', 'SKIP_SAVE'})
 
     @classmethod

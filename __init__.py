@@ -351,9 +351,6 @@ def register():
                                                                            ), name='Theme')
 
     IDStore = bpy.types.WindowManager
-    # IDStore.rigify_collection = bpy.props.EnumProperty(items=rig_lists.col_enum_list, default="All",
-    #                                                    name="Rigify Active Collection",
-    #                                                    description="The selected rig collection")
 
     IDStore.rigify_types = bpy.props.CollectionProperty(type=RigifyName)
     IDStore.rigify_active_type = bpy.props.IntProperty(name="Rigify Active Type", description="The selected rig type")
@@ -421,7 +418,6 @@ def unregister():
     del bpy.types.PoseBone.rigify_glue
 
     IDStore = bpy.types.WindowManager
-    # del IDStore.rigify_collection
     del IDStore.rigify_types
     del IDStore.rigify_active_type
     del IDStore.rigify_advanced_generation
@@ -448,11 +444,6 @@ def unregister():
     bpy.utils.unregister_class(RigifySelectionColors)
 
     bpy.utils.unregister_class(RigifyArmatureLayer)
-    # custom_folder = bpy.context.user_preferences.addons['rigify'].preferences.custom_folder
-    # if custom_folder in sys.path:
-    #     sys.path.remove(custom_folder)
-    # if os.path.join(custom_folder, utils.METARIG_DIR) in sys.path:
-    #     sys.path.remove(os.path.join(custom_folder, utils.METARIG_DIR))
     if "bl_rna" in RigifyPreferences.__dict__:
         bpy.utils.unregister_class(RigifyPreferences)
 

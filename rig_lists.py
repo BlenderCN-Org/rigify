@@ -51,13 +51,6 @@ def get_rigs(base_path, path, feature_set='rigify'):
         if is_dir:
             # Check directories
             module_name = os.path.join(path, "__init__").replace(os.sep, ".")
-            # rig_module = utils.get_resource(module_name, base_path=base_path, resource_type='RIG')
-            # Check if it's a rig itself
-            # if hasattr(rig_module, "Rig"):
-            # if False:
-            #     rigs[f] = {"module": rig_module,
-            #                "feature_set": feature_set}
-            # else:
             # Check for sub-rigs
             sub_rigs, sub_impls = get_rigs(base_path, os.path.join(path, f, ""), feature_set)  # "" adds a final slash
             rigs.update({"%s.%s" % (f, l): sub_rigs[l] for l in sub_rigs})
@@ -76,23 +69,12 @@ def get_rigs(base_path, path, feature_set='rigify'):
     return rigs, impl_rigs
 
 
-# def get_collection_list(rigs):
-#     collection_list = []
-#     for r in rigs:
-#         a = r.split(".")
-#         if len(a) >= 2 and a[0] not in collection_list:
-#             collection_list += [a[0]]
-#     return collection_list
-
-
 # Public variables
 MODULE_DIR = os.path.dirname(os.path.dirname(__file__))
 if MODULE_DIR not in sys.path:
     sys.path.append(MODULE_DIR)
 
 rigs, implementation_rigs = get_rigs(MODULE_DIR, os.path.join(os.path.basename(os.path.dirname(__file__)), utils.RIG_DIR, ''))
-# collection_list = get_collection_list(sorted(rigs.keys()))
-# col_enum_list = [("All", "All", ""), ("None", "None", "")] + [(c, c, "") for c in collection_list]
 
 
 def get_external_rigs(feature_sets_path):
@@ -102,16 +84,6 @@ def get_external_rigs(feature_sets_path):
             rigs.pop(rig)
             if rig in implementation_rigs:
                 implementation_rigs.pop(rig)
-    # rigs.clear()
-    # implementation_rigs.clear()
-    # new_rigs, new_implementation_rigs = get_rigs(
-    #     MODULE_DIR,
-    #     os.path.join(
-    #         os.path.basename(os.path.dirname(__file__)), utils.RIG_DIR, ''
-    #     )
-    # )
-    # rigs.update(new_rigs)
-    # implementation_rigs.update(new_implementation_rigs)
 
     # Get external rigs
     for feature_set in os.listdir(feature_sets_path):
