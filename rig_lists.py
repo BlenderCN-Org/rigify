@@ -18,7 +18,6 @@
 
 import os
 import sys
-import bpy
 
 from . import utils
 

@@ -27,6 +27,7 @@ import bpy
 from . import utils
 from . import template_list
 
+
 class ArmatureSubMenu(bpy.types.Menu):
     # bl_idname = 'ARMATURE_MT_armature_class'
 

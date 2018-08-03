@@ -48,7 +48,6 @@ import sys
 import os
 from bpy.types import AddonPreferences
 from bpy.props import BoolProperty
-from bpy.props import StringProperty
 
 
 class RigifyPreferences(AddonPreferences):
