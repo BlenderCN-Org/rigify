@@ -350,6 +350,11 @@ def register():
                                                                            ), name='Theme')
 
     IDStore = bpy.types.WindowManager
+    IDStore.rigify_collection = bpy.props.EnumProperty(items=(("All", "All", "All"),),
+                                                       default="All",
+                                                       name="Rigify Active Collection",
+                                                       description="The selected rig collection")
+
 
     IDStore.rigify_types = bpy.props.CollectionProperty(type=RigifyName)
     IDStore.rigify_active_type = bpy.props.IntProperty(name="Rigify Active Type", description="The selected rig type")
@@ -400,15 +405,20 @@ def register():
     bpy.context.user_preferences.addons['rigify'].preferences.update_external_rigs()
 
     # Add rig parameters
-    for rig in rig_lists.rigs:
-        if bpy.context.user_preferences.addons['rigify'].preferences.legacy_mode:
+    if bpy.context.user_preferences.addons['rigify'].preferences.legacy_mode:
+        for rig in rig_lists.rig_list:
             r = utils.get_rig_type(rig)
-        else:
+            try:
+                r.add_parameters(RigifyParameters)
+            except AttributeError:
+                pass
+    else:
+        for rig in rig_lists.rigs:
             r = rig_lists.rigs[rig]['module']
-        try:
-            r.add_parameters(RigifyParameters)
-        except AttributeError:
-            pass
+            try:
+                r.add_parameters(RigifyParameters)
+            except AttributeError:
+                pass
 
 
 def unregister():
@@ -417,6 +427,7 @@ def unregister():
     del bpy.types.PoseBone.rigify_glue
 
     IDStore = bpy.types.WindowManager
+    del IDStore.rigify_collection
     del IDStore.rigify_types
     del IDStore.rigify_active_type
     del IDStore.rigify_advanced_generation
