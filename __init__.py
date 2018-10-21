@@ -197,12 +197,13 @@ class RigifyPreferences(AddonPreferences):
         op.data_path = 'addon_prefs.show_rigs_folder_expanded'
         sub.label('{}: {}'.format('Rigify', 'External feature sets'))
         if rigs_expand:
-            feature_sets_path = os.path.join(bpy.utils.script_path_user(), 'rigify')
-            for fs in os.listdir(feature_sets_path):
-                row = col.row()
-                row.label(fs)
-                op = row.operator("wm.rigify_remove_feature_set", text="Remove", icon='CANCEL')
-                op.featureset = fs
+            if 'rigify' in os.listdir(bpy.utils.script_path_user()):
+                feature_sets_path = os.path.join(bpy.utils.script_path_user(), 'rigify')
+                for fs in os.listdir(feature_sets_path):
+                    row = col.row()
+                    row.label(fs)
+                    op = row.operator("wm.rigify_remove_feature_set", text="Remove", icon='CANCEL')
+                    op.featureset = fs
             row = col.row(align=True)
             row.operator("wm.rigify_add_feature_set", text="Install Feature Set from File...", icon='FILESEL')
 
