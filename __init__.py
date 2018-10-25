@@ -195,7 +195,7 @@ class RigifyPreferences(AddonPreferences):
         op.data_path = 'addon_prefs.show_rigs_folder_expanded'
         sub.label('{}: {}'.format('Rigify', 'External feature sets'))
         if rigs_expand:
-            if 'rigify' in os.listdir(bpy.utils.script_path_user()):
+            if os.path.exists(os.path.join(bpy.utils.script_path_user(), 'rigify')):
                 feature_sets_path = os.path.join(bpy.utils.script_path_user(), 'rigify')
                 for fs in os.listdir(feature_sets_path):
                     row = col.row()
