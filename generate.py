@@ -346,6 +346,8 @@ def generate_rig(context, metarig):
         ui_imports = rig_ui_template.UI_IMPORTS.copy()
         ui_utilities = rig_ui_template.UI_UTILITIES.copy()
         ui_register = rig_ui_template.UI_REGISTER.copy()
+        ui_register_drivers = []
+        ui_register_props = []
         noparent_bones = []
         for rig in rigs:
             # Go into editmode in the rig armature
@@ -363,6 +365,10 @@ def generate_rig(context, metarig):
                     ui_utilities += scripts['utilities']
                 if 'register' in scripts:
                     ui_register += scripts['register']
+                if 'register_drivers' in scripts:
+                    ui_register_drivers += scripts['register_drivers']
+                if 'register_props' in scripts:
+                    ui_register_props += scripts['register_props']
                 if 'noparent_bones' in scripts:
                     noparent_bones += scripts['noparent_bones']
             elif scripts is not None:
@@ -505,13 +511,25 @@ def generate_rig(context, metarig):
     for s in ui_scripts:
         script.write("\n        " + s.replace("\n", "\n        ") + "\n")
     script.write(rig_ui_template.layers_ui(vis_layers, layer_layout))
+
     script.write("\ndef register():\n")
     ui_register = OrderedDict.fromkeys(ui_register)
     for s in ui_register:
         script.write("    bpy.utils.register_class("+s+");\n")
+    ui_register_drivers = OrderedDict.fromkeys(ui_register_drivers)
+    for s in ui_register_drivers:
+        script.write("    bpy.app.driver_namespace['"+s+"'] = "+s+"\n")
+    ui_register_props = OrderedDict.fromkeys(ui_register_props)
+        for s in ui_register_props:
+        script.write("    bpy.types.%s = %s\n " % (*s,))
+
     script.write("\ndef unregister():\n")
+    for s in ui_register_props:
+        script.write("    del bpy.types.%s\n" % s[0])
     for s in ui_register:
         script.write("    bpy.utils.unregister_class("+s+");\n")
+    for s in ui_register_drivers:
+        script.write("    del bpy.app.driver_namespace['"+s+"']\n")
     script.write("\nregister()\n")
     script.use_module = True
 
